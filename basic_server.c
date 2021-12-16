@@ -18,9 +18,9 @@ int main() {
 
             // process string to all lower
             for(int i=0; i<strlen(line); i++) {
-                line[i] = tolower(line[i]);
+                line[i] = toupper(line[i]);
             }
-
+            //send response to parent
             write(to_client, line, sizeof(line)); // send data to client
         }
     }
