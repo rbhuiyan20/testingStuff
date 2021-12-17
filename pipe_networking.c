@@ -10,19 +10,26 @@ removes the WKP once a connection has been made
 returns the file descriptor for the upstream pipe.
 =========================*/
 int server_setup() {
-    int from_client;
+    int from_client = 0;
     char buffer[HANDSHAKE_BUFFER_SIZE];
     printf("[server] making wkp for handshake\n");
     int b;
     b= mkfifo(WKP, 0600);
-    if ( b== -1 ) {
-        printf("mkfifo error %d: %s\n", errno, strerror(errno));
+    if ( b < 0 ) {
+        printf("mkfifo error, server could not make wkp %d: %s\n", errno, strerror(errno));
         exit(-1);
     }
 
-    //open & block
+    printf("[server] opening wkp");
+    
     from_client = open(WKP, O_RDONLY, 0);
 
+    
+    if (from_client < 0){
+        printf("[server] could not open the wkp %d: %s\n", errno, strerror(errno));
+        exit(-1);
+    }
+    
     //remove WKP after connection and subserver
     remove(WKP);
     printf("[server] wkp removed\n");
@@ -37,16 +44,18 @@ handles the subserver portion of the 3 way handshake
 returns the file descriptor for the downstream pipe.
 =========================*/
 int server_connect(int from_client) {
-    int to_client  = 0, b;
+    int to_client  = 0; 
+    int b; 
     char buffer[HANDSHAKE_BUFFER_SIZE];
 
-    //read initial message
+    //handshake has been recieved by the sub-server
     b= read(from_client, buffer, sizeof(buffer));
-    printf("[server] handshake received: -%s-\n", buffer);
+    printf("[sub-server] the handshake has been recieved: -%s-\n", buffer);
 
-
+    //opens buffer
     to_client = open(buffer, O_WRONLY, 0);
-    
+   
+
     //create SYN_ACK message
     srand(time(NULL));
     int r = rand() % HANDSHAKE_BUFFER_SIZE;
@@ -57,11 +66,10 @@ int server_connect(int from_client) {
     read(from_client, buffer, sizeof(buffer));
     int ra = atoi(buffer);
     if (ra != r+1) {
-        printf("[server] handshake received bad ACK: -%s-\n", buffer);
+        printf("[server] bad ACK transmitted -%s-\n", buffer);
         exit(0);
-    }//bad response
-    printf("[server] handshake received: -%s-\n", buffer);
-
+    }
+    printf("[server] handshake recieved : -%s-\n", buffer);
     return to_client;
 }
 
