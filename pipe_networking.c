@@ -55,7 +55,6 @@ int server_connect(int from_client) {
     //opens buffer
     to_client = open(buffer, O_WRONLY, 0);
    
-
     //create SYN_ACK message
     srand(time(NULL));
     int r = rand() % HANDSHAKE_BUFFER_SIZE;
