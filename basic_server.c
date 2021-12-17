@@ -7,26 +7,31 @@ int main() {
     int from_client;
 
     while (1) {
+        
         from_client = server_setup();
-
+        
+        //below is the subserver stuff
         int f = fork();
-        if (f) { // server
+        
+        // main server
+        if (f) { 
+        } else { 
+            // forking server or sub server - completes handshake, communicates with server
 
-        } else { // subserver
-            char line[BUFFER_SIZE];
             to_client = server_connect(from_client);
-
-            while (1) { // Prompt client for input
-                if (read(from_client, line, sizeof(line))==0) { // reads data from client
+            char userIn[BUFFER_SIZE];
+            while (1) { 
+                //Reads in user input
+                if (read(from_client, userIn, sizeof(userIn))==0) { 
                     break;
                 }
 
-                // process string to all lower
-                for(int i=0; i<strlen(line); i++) {
-                    line[i] = tolower(line[i]);
+                // makes user input all uppercase
+                for(int i=0; i<strlen(userIn); i++) {
+                    userIn[i] = toupper(userIn[i]);
                 }
-
-                write(to_client, line, sizeof(line)); // send data to client
+                //send data back to the user
+                write(to_client, userIn, sizeof(userIn)); 
             }
         }
     }
