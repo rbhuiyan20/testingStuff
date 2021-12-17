@@ -7,21 +7,27 @@ int main() {
     int from_client;
 
     while (1) {
-        // Repeatedly starts handshake
-        from_client = server_handshake( &to_client );
+        from_client = server_setup();
 
-        char line[BUFFER_SIZE];
-        while (1) { // Prompt client for input
-            if (read(from_client, line, sizeof(line))==0) { // reads data from client
-                break;
-            }
+        int f = fork();
+        if (f) { // server
 
-            // process string to all lower
-            for(int i=0; i<strlen(line); i++) {
-                line[i] = toupper(line[i]);
+        } else { // subserver
+            char line[BUFFER_SIZE];
+            to_client = server_connect(from_client);
+
+            while (1) { // Prompt client for input
+                if (read(from_client, line, sizeof(line))==0) { // reads data from client
+                    break;
+                }
+
+                // process string to all lower
+                for(int i=0; i<strlen(line); i++) {
+                    line[i] = tolower(line[i]);
+                }
+
+                write(to_client, line, sizeof(line)); // send data to client
             }
-            //send response to parent
-            write(to_client, line, sizeof(line)); // send data to client
         }
     }
 }
