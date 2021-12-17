@@ -10,22 +10,22 @@ removes the WKP once a connection has been made
 returns the file descriptor for the upstream pipe.
 =========================*/
 int server_setup() {
-    int b;
     int from_client;
     char buffer[HANDSHAKE_BUFFER_SIZE];
-
-    printf("[server] handshake: making wkp\n");
-    b = mkfifo(WKP, 0600);
-    if ( b == -1 ) {
+    printf("[server] making wkp for handshake\n");
+    int b;
+    x= mkfifo(WKP, 0600);
+    if ( x== -1 ) {
         printf("mkfifo error %d: %s\n", errno, strerror(errno));
         exit(-1);
     }
+
     //open & block
     from_client = open(WKP, O_RDONLY, 0);
-    //remove WKP
-    remove(WKP);
 
-    printf("[server] handshake: removed wkp\n");
+    //remove WKP after connection and subserver
+    remove(WKP);
+    printf("[server] wkp removed\n");
 
     return from_client;
 }
@@ -41,7 +41,7 @@ int server_connect(int from_client) {
     char buffer[HANDSHAKE_BUFFER_SIZE];
 
     //read initial message
-    b = read(from_client, buffer, sizeof(buffer));
+    x= read(from_client, buffer, sizeof(buffer));
     printf("[server] handshake received: -%s-\n", buffer);
 
 
@@ -78,8 +78,8 @@ int server_handshake(int *to_client) {
     char buffer[HANDSHAKE_BUFFER_SIZE];
 
     printf("[server] handshake: making wkp\n");
-    b = mkfifo(WKP, 0600);
-    if ( b == -1 ) {
+    x= mkfifo(WKP, 0600);
+    if ( x== -1 ) {
         printf("mkfifo error %d: %s\n", errno, strerror(errno));
         exit(-1);
     }
@@ -90,7 +90,7 @@ int server_handshake(int *to_client) {
 
     printf("[server] handshake: removed wkp\n");
     //read initial message
-    b = read(from_client, buffer, sizeof(buffer));
+    x= read(from_client, buffer, sizeof(buffer));
     printf("[server] handshake received: -%s-\n", buffer);
 
 
