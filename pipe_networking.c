@@ -13,7 +13,7 @@ int server_setup() {
     int from_client;
     char buffer[HANDSHAKE_BUFFER_SIZE];
     printf("[server] making wkp for handshake\n");
-    int b;
+    int x;
     x= mkfifo(WKP, 0600);
     if ( x== -1 ) {
         printf("mkfifo error %d: %s\n", errno, strerror(errno));
@@ -37,7 +37,7 @@ handles the subserver portion of the 3 way handshake
 returns the file descriptor for the downstream pipe.
 =========================*/
 int server_connect(int from_client) {
-    int to_client  = 0, b;
+    int to_client  = 0, x;
     char buffer[HANDSHAKE_BUFFER_SIZE];
 
     //read initial message
