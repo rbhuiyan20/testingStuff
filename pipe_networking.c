@@ -10,7 +10,8 @@ removes the WKP once a connection has been made
 returns the file descriptor for the upstream pipe.
 =========================*/
 int server_setup() {
-    int b, from_client;
+    int b;
+    int from_client;
     char buffer[HANDSHAKE_BUFFER_SIZE];
 
     printf("[server] handshake: making wkp\n");
