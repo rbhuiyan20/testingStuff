@@ -1,45 +1,31 @@
 #include "pipe_networking.h"
 
 
+char *toUpper(char line[]) {
+    char * input = line;
+    int i;
+    // process input str into all caps
+    for (i = 0; i < strlen(line); i++) {
+        line[i] = toupper(line[i]);
+    }
+    return line;
+}
+
 int main() {
-
-    // listening for connection
     int sd = server_setup();
-
-    while (1) {
-        // accept client connection
+    while(1) {
         int from_client = server_connect(sd);
-        if(from_client == -1) {
-            printf("unable to accept client connection");
-            return 0;
-        }
-
         int f = fork();
-        if (f) { // server
-
-        } else { // subserver
-            char line[BUFFER_SIZE];
-
-            while (1) { // Prompt client for input
-                if (read(from_client, line, sizeof(line))==0) { // reads data from client
-                    int err = close(from_client);
-                    if(err == -1) {
-                        printf("Unable to read from client");
-                        return 0;
-                    }
-                    break;
-                }
-
-                // process string to all lower
-                for(int i=0; i<strlen(line); i++) {
-                    line[i] = tolower(line[i]);
-                }
-
-                int err = write(from_client, line, sizeof(line)); // send data to client
-                if(err == -1) {
-                    printf("Unable to write to client");
-                    return 0;
-                }
+        if(f) {
+            close(from_client);
+        } else {
+            char message[BUFFER_SIZE];
+            while(1) {
+                char message[BUFFER_SIZE];
+                int r = read(from_client, message, sizeof(message));
+                if(r==0) break;
+                toUpper(message);
+                write(from_client, message, sizeof(message));
             }
         }
     }
