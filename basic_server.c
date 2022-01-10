@@ -15,9 +15,11 @@ int main() {
         if (f) { 
 
         } else { 
+            
             char userIn[BUFFER_SIZE];
 
             while (1) { 
+
                 //Reads in user input
                 if (read(from_client, userIn, sizeof(userIn))==0) { 
                     close(from_client);

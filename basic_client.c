@@ -8,10 +8,13 @@ int main() {
         // while client runs, prompt user for input
         printf("input: ");
         fgets(userIn, sizeof(userIn), stdin);
+
         // send input to server
         write(sd, userIn, sizeof(userIn));
+
         // get the processed output from the server
         read(sd, userIn, sizeof(userIn));
+        
         // print it for the user
         printf("Output: %s", userIn);
     }
