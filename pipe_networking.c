@@ -18,7 +18,6 @@ int server_setup() {
     printf("Listening....\n");
     listen(sd, 10);
 
-    printf("Freed hints and results\n");
     free(hints);
     freeaddrinfo(results);
 
