@@ -15,7 +15,7 @@ int main() {
         if (f) { 
 
         } else { 
-            
+            // array of user input
             char userIn[BUFFER_SIZE];
 
             while (1) { 
