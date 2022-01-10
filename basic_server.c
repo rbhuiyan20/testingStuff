@@ -16,11 +16,11 @@ int main() {
         if (f) { 
 
         } else { 
-            char line[BUFFER_SIZE];
+            char userIn[BUFFER_SIZE];
 
             while (1) { 
                 // read in user input
-                if (read(from_client, line, sizeof(line))==0) { 
+                if (read(from_client, userIn, sizeof(userIn))==0) { 
                     int err = close(from_client);
                     }
                     break;
@@ -31,8 +31,8 @@ int main() {
                     userIn[i] = toupper(userIn[i]);
                 }
                 // send data back to user
-                write(from_client, line, sizeof(line)); 
+                write(from_client, userIn, sizeof(userIn)); 
             }
         }
-    }
+    
 }

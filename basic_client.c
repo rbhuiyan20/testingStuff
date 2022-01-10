@@ -3,16 +3,16 @@
 
 int main() {
     int sd = client_connect();
-    char line[BUFFER_SIZE];
+    char userIn[BUFFER_SIZE];
     while(1) {
         // while client runs, prompt user for input
         printf("input: ");
-        fgets(line, sizeof(line), stdin);
+        fgets(userIn, sizeof(userIn), stdin);
         // send input to server
-        write(sd, line, sizeof(line));
+        write(sd, userIn, sizeof(userIn));
         // get the processed output from the server
-        read(sd, line, sizeof(line));
+        read(sd, userIn, sizeof(userIn));
         // print it for the user
-        printf("Output: %s", line);
+        printf("Output: %s", userIn);
     }
 }
