@@ -1,168 +1,86 @@
 #include "pipe_networking.h"
 
-
-/*=========================
-server_setup
-args:
-creates the WKP (upstream) and opens it, waiting for a
-connection.
-removes the WKP once a connection has been made
-returns the file descriptor for the upstream pipe.
-=========================*/
 int server_setup() {
-    int from_client = 0;
-    char buffer[HANDSHAKE_BUFFER_SIZE];
-    printf("[server] making wkp for handshake\n");
-    int b;
-    b= mkfifo(WKP, 0600);
-    if ( b < 0 ) {
-        printf("mkfifo error, server could not make wkp %d: %s\n", errno, strerror(errno));
-        exit(-1);
+    struct addrinfo * hints, * results;
+    hints = calloc(1,sizeof(struct addrinfo));
+    hints->ai_family = AF_INET;
+    hints->ai_socktype = SOCK_STREAM; //TCP socket
+    hints->ai_flags = AI_PASSIVE; //only needed on server
+    int err = getaddrinfo(NULL, "9845", hints, &results);  //Server sets node to NULL
+    if(err == -1) {
+        printf("Server: unable to get IP info");
+        return -1;
     }
 
-    printf("[server] opening wkp");
-    
-    from_client = open(WKP, O_RDONLY, 0);
-
-    
-    if (from_client < 0){
-        printf("[server] could not open the wkp %d: %s\n", errno, strerror(errno));
-        exit(-1);
+    //create socket
+    int sd = socket(results->ai_family, results->ai_socktype, results->ai_protocol);
+    if (sd==-1) {
+        printf("Server: unable to create socket");
+        return -1;
     }
-    
-    //remove WKP after connection and subserver
-    remove(WKP);
-    printf("[server] wkp removed\n");
 
-    return from_client;
+    err = bind(sd, results->ai_addr, results->ai_addrlen);
+    if(err == -1) {
+        printf("Server: unable to get bind socket");
+        return -1;
+    }
+
+    printf("listening on socket\n");
+    err = listen(sd, 10);
+    if(err == -1) {
+        printf("Server: unable to listen");
+        return -1;
+    }
+
+    free(hints);
+    freeaddrinfo(results);
+
+    return sd;
 }
 
-/*=========================
-server_connect
-args: int from_client
-handles the subserver portion of the 3 way handshake
-returns the file descriptor for the downstream pipe.
-=========================*/
-int server_connect(int from_client) {
-    int to_client  = 0; 
-    int b; 
-    char buffer[HANDSHAKE_BUFFER_SIZE];
+int server_connect(int sd) {
+    int client_socket;
+    socklen_t sock_size;
+    struct sockaddr_storage client_address;
+    sock_size = sizeof(client_address);
 
-    //handshake has been recieved by the sub-server
-    b= read(from_client, buffer, sizeof(buffer));
-    printf("[sub-server] the handshake has been recieved: -%s-\n", buffer);
-
-    //opens buffer
-    to_client = open(buffer, O_WRONLY, 0);
-   
-    //create SYN_ACK message
-    srand(time(NULL));
-    int r = rand() % HANDSHAKE_BUFFER_SIZE;
-    sprintf(buffer, "%d", r);
-
-    write(to_client, buffer, sizeof(buffer));
-    //rad and check ACK
-    read(from_client, buffer, sizeof(buffer));
-    int ra = atoi(buffer);
-    if (ra != r+1) {
-        printf("[server] bad ACK transmitted -%s-\n", buffer);
-        exit(0);
+    client_socket = accept(sd,(struct sockaddr *)&client_address, &sock_size);
+    if(client_socket == -1) {
+        printf("Error: %s\n", strerror(errno));
+        return -1;
     }
-    printf("[server] handshake recieved : -%s-\n", buffer);
-    return to_client;
+
+    return client_socket;
 }
 
-
-/*=========================
-server_handshake
-args: int * to_client
-Performs the server side pipe 3 way handshake.
-Sets *to_client to the file descriptor to the downstream pipe.
-returns the file descriptor for the upstream pipe.
-=========================*/
-int server_handshake(int *to_client) {
-    int b, from_client;
-    char buffer[HANDSHAKE_BUFFER_SIZE];
-
-    printf("[server] handshake: making wkp\n");
-    b= mkfifo(WKP, 0600);
-    if ( b== -1 ) {
-        printf("mkfifo error %d: %s\n", errno, strerror(errno));
-        exit(-1);
-    }
-    //open & block
-    from_client = open(WKP, O_RDONLY, 0);
-    //remove WKP
-    remove(WKP);
-
-    printf("[server] handshake: removed wkp\n");
-    //read initial message
-    b= read(from_client, buffer, sizeof(buffer));
-    printf("[server] handshake received: -%s-\n", buffer);
-
-
-    *to_client = open(buffer, O_WRONLY, 0);
-    //create SYN_ACK message
-    srand(time(NULL));
-    int r = rand() % HANDSHAKE_BUFFER_SIZE;
-    sprintf(buffer, "%d", r);
-
-    write(*to_client, buffer, sizeof(buffer));
-    //rad and check ACK
-    read(from_client, buffer, sizeof(buffer));
-    int ra = atoi(buffer);
-    if (ra != r+1) {
-        printf("[server] handshake received bad ACK: -%s-\n", buffer);
-        exit(0);
-    }//bad response
-    printf("[server] handshake received: -%s-\n", buffer);
-
-    return from_client;
-}
-
-
-/*=========================
-client_handshake
-args: int * to_server
-Performs the client side pipe 3 way handshake.
-Sets *to_server to the file descriptor for the upstream pipe.
-returns the file descriptor for the downstream pipe.
-=========================*/
-int client_handshake(int *to_server) {
-
-    int from_server;
-    char buffer[HANDSHAKE_BUFFER_SIZE];
-    char ppname[HANDSHAKE_BUFFER_SIZE];
-
-    //make private pipe
-    printf("[client] handshake: making pp\n");
-    sprintf(ppname, "%d", getpid() );
-    mkfifo(ppname, 0600);
-
-    //send pp name to server
-    printf("[client] handshake: connecting to wkp\n");
-    *to_server = open( WKP, O_WRONLY, 0);
-    if ( *to_server == -1 ) {
-        printf("open error %d: %s\n", errno, strerror(errno));
-        exit(1);
+int client_connect() {
+    struct addrinfo * hints, * results;
+    hints = calloc(1,sizeof(struct addrinfo));
+    hints->ai_family = AF_INET;
+    hints->ai_socktype = SOCK_STREAM; //TCP socket
+    hints->ai_flags = AI_PASSIVE; //only needed on server
+    int err = getaddrinfo("127.0.0.1", "9845", hints, &results);  //Server sets node to NULL
+    if(err == -1) {
+        printf("Client: unable to get IP info");
+        return -1;
     }
 
-    write(*to_server, ppname, sizeof(buffer));
-    //open and wait for connection
-    from_server = open(ppname, O_RDONLY, 0);
+    //create socket
+    int sd = socket(results->ai_family, results->ai_socktype, results->ai_protocol);
+    if(sd == -1) {
+        printf("Client: unable to create socket");
+        return -1;
+    }
 
-    read(from_server, buffer, sizeof(buffer));
-    /*validate buffer code goes here */
-    printf("[client] handshake: received -%s-\n", buffer);
+    err = connect(sd, results->ai_addr, results->ai_addrlen);;
+    if(err == -1) {
+        printf("Client: unable to connect to server");
+        return -1;
+    }
+    //DO STUFF
 
-    //remove pp
-    remove(ppname);
-    printf("[client] handshake: removed pp\n");
+    free(hints);
+    freeaddrinfo(results);
 
-    //send ACK to server
-    int r = atoi(buffer) + 1;
-    sprintf(buffer, "%d", r);
-    write(*to_server, buffer, sizeof(buffer));
-
-    return from_server;
+    return sd;
 }
