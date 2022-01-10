@@ -1,25 +1,37 @@
 #include "pipe_networking.h"
 
 
-
 int main() {
+
+   
     int sd = server_setup();
-    while(1) {
+
+    while (1) {
+        
         int from_client = server_connect(sd);
+
+
+        // subserver stuff below
         int f = fork();
-        if(f) {
-            close(from_client);
-        } else {
-            char message[BUFFER_SIZE];
-            while(1) {
-                char message[BUFFER_SIZE];
-                int r = read(from_client, message, sizeof(message));
-                if(r==0) break;
-                int i;
-                for (i=0; i<strlen(message);i++){
-                    message[i] = toupper(message[i]);
+        if (f) { 
+
+        } else { 
+            char line[BUFFER_SIZE];
+
+            while (1) { 
+                // read in user input
+                if (read(from_client, line, sizeof(line))==0) { 
+                    int err = close(from_client);
+                    }
+                    break;
                 }
-                write(from_client, message, sizeof(message));
+
+                // makes user input all uppercase
+                for(int i=0; i<strlen(userIn); i++) {
+                    userIn[i] = toupper(userIn[i]);
+                }
+                // send data back to user
+                write(from_client, line, sizeof(line)); 
             }
         }
     }
