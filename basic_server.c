@@ -3,36 +3,32 @@
 
 int main() {
 
-   
+    // listening for connection
     int sd = server_setup();
 
     while (1) {
-        
+        // accept client connection
         int from_client = server_connect(sd);
 
-
-        // subserver stuff below
         int f = fork();
-        if (f) { 
+        if (f) { // server
 
-        } else { 
-            char userIn[BUFFER_SIZE];
+        } else { // subserver
+            char line[BUFFER_SIZE];
 
-            while (1) { 
-                // read in user input
-                if (read(from_client, userIn, sizeof(userIn))==0) { 
-                    int err = close(from_client);
-                    }
+            while (1) { // Prompt client for input
+                if (read(from_client, line, sizeof(line))==0) { // reads data from client
+                    close(from_client);
                     break;
                 }
 
-                // makes user input all uppercase
-                for(int i=0; i<strlen(userIn); i++) {
-                    userIn[i] = toupper(userIn[i]);
+                // process string to all lower
+                for(int i=0; i<strlen(line); i++) {
+                    line[i] = tolower(line[i]);
                 }
-                // send data back to user
-                write(from_client, userIn, sizeof(userIn)); 
+
+                write(from_client, line, sizeof(line)); // send data to client
             }
         }
-    
+    }
 }
